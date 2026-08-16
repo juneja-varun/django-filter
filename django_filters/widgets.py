@@ -267,4 +267,6 @@ class QueryArrayWidget(BaseCSVWidget, forms.TextInput):
         else:
             ret = []
 
-        return list(set(ret))
+        # dict.fromkeys() dedupes while preserving the submitted order, unlike
+        # set(), which would make the result order effectively arbitrary.
+        return list(dict.fromkeys(ret))
