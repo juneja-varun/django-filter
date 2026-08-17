@@ -562,6 +562,15 @@ class BaseCSVFilter(Filter):
 
     base_field_class = BaseCSVField
 
+    # Explicitly bind to the base Filter.filter(), rather than leaving it to
+    # be resolved by MRO. When mixed with a concrete filter class that
+    # overrides .filter() with different semantics (eg MultipleChoiceFilter's
+    # per-value OR-combining, used by ModelChoiceFilter's *multiple* sibling),
+    # that override would otherwise take precedence and apply the wrong
+    # semantics to what should be a single field_name__lookup_expr=value call
+    # against the whole cleaned list.
+    filter = Filter.filter
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("help_text", _("Multiple values may be separated by commas."))
         super().__init__(*args, **kwargs)

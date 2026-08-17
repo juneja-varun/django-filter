@@ -269,6 +269,20 @@ class BaseCSVFieldTests(TestCase):
         with self.assertRaisesMessage(forms.ValidationError, msg):
             field.clean([""])
 
+    def test_clean_multiple_choice_field(self):
+        # MultipleChoiceField/ModelMultipleChoiceField already expect the
+        # whole list as a single unit, so it must be cleaned in one call
+        # rather than element-by-element. Regression test for
+        # https://github.com/carltongibson/django-filter/issues/1084
+        class ChoiceCSVField(BaseCSVField, forms.MultipleChoiceField):
+            pass
+
+        field = ChoiceCSVField(required=False, choices=[("1", "1"), ("2", "2")])
+
+        self.assertEqual(field.clean(None), None)
+        self.assertEqual(field.clean([]), [])
+        self.assertEqual(field.clean(["1", "2"]), ["1", "2"])
+
     def test_derived_widget(self):
         with self.assertRaises(AssertionError) as excinfo:
             BaseCSVField(widget=RangeWidget())

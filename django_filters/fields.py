@@ -194,6 +194,15 @@ class BaseCSVField(forms.Field):
 
         if value is None:
             return None
+
+        if isinstance(self, (forms.MultipleChoiceField, forms.ModelMultipleChoiceField)):
+            # The wrapped field already expects the whole list as a single
+            # unit (eg MultipleChoiceField, ModelMultipleChoiceField), so
+            # clean it in one call instead of cleaning each CSV-split value
+            # independently - the latter trips the field's own "Enter a
+            # list of values" validation, since it never receives a list.
+            return super(BaseCSVField, self).clean(value)
+
         return [super(BaseCSVField, self).clean(v) for v in value]
 
 

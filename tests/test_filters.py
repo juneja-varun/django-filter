@@ -1538,6 +1538,32 @@ class BaseInFilterTests(TestCase):
         f.filter(qs, [1, 2])
         qs.filter.assert_called_once_with(None__in=[1, 2])
 
+    def test_filtering_with_multiple_choice_filter(self):
+        # MultipleChoiceFilter.filter() combines values with per-value OR
+        # predicates, which is incompatible with the single field__in=[...]
+        # query that BaseInFilter is meant to produce. Regression test for
+        # https://github.com/carltongibson/django-filter/issues/1084 - the
+        # MRO of a class mixing BaseInFilter with a MultipleChoiceFilter
+        # subclass must not resolve `.filter` to the latter's override.
+        class ChoiceInFilter(BaseInFilter, MultipleChoiceFilter):
+            pass
+
+        qs = mock.Mock(spec=["filter", "distinct"])
+        qs.distinct.return_value = qs
+        f = ChoiceInFilter()
+        f.filter(qs, ["a", "b"])
+        qs.filter.assert_called_once_with(None__in=["a", "b"])
+
+    def test_filtering_with_model_multiple_choice_filter(self):
+        class ModelInFilter(BaseInFilter, ModelMultipleChoiceFilter):
+            pass
+
+        qs = mock.Mock(spec=["filter", "distinct"])
+        qs.distinct.return_value = qs
+        f = ModelInFilter()
+        f.filter(qs, [1, 2])
+        qs.filter.assert_called_once_with(None__in=[1, 2])
+
 
 class BaseRangeFilterTests(TestCase):
     def test_filtering(self):
